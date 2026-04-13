@@ -57,6 +57,14 @@
         @media (max-width: 400px) {
             #canvas { width: 300px; height: 300px; }
         }
+        /* 底部 LOGO 樣式 */
+        .footer-logo {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 0; text-align: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 999;
+        }
+        .footer-logo img { height: 50px; width: auto; }
     </style>
 </head>
 <body>
@@ -238,7 +246,14 @@
                 container.appendChild(btn);
             });
         }
+</div>
 
+    <div class="footer-logo">
+        <img src="彰化分局LOGO.png" alt="企業LOGO">
+    </div>
+
+    <script>
+    // ... 後面是 JavaScript 程式碼
 // ... (後面 drawWheel 等函數保持不變)
         drawWheel();
     </script>
