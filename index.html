@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>稅務法規挑戰賽 - 轉輪盤</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --bg: #f5f6fa;
+        }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        /* 標題 */
+        h1 { color: #2d3436; margin-top: 30px; text-align: center; }
+
+        /* 轉盤區塊 */
+        #wheel-section { display: flex; flex-direction: column; align-items: center; transition: 0.5s; }
+        .wheel-container { position: relative; margin: 20px 0; }
+        #canvas { border-radius: 50%; border: 8px solid white; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .pointer {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent;
+            border-top: 40px solid #d63031; z-index: 10;
+        }
+        
+        /* 題目區塊 */
+        #quiz-section { 
+            display: none; width: 90%; max-width: 500px; background: white; 
+            padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-top: 50px; text-align: center;
+        }
+
+        .option-btn {
+            display: block; width: 100%; padding: 15px; margin: 15px 0;
+            border: 2px solid #dfe6e9; border-radius: 12px; background: white;
+            font-size: 18px; cursor: pointer; transition: 0.3s;
+        }
+        .option-btn:hover { background: var(--bg); border-color: var(--secondary); }
+
+        .result-msg { font-size: 20px; font-weight: bold; margin: 20px 0; min-height: 30px; }
+        
+        /* 控制按鈕 */
+        .btn {
+            padding: 15px 40px; font-size: 1.1rem; font-weight: bold;
+            color: white; border: none; border-radius: 50px; cursor: pointer;
+            transition: 0.3s;
+        }
+        #spinBtn { background: var(--primary); box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4); }
+        #spinBtn:disabled { background: #b2bec3; cursor: not-allowed; transform: none; }
+        #backBtn { background: #636e72; display: none; margin-top: 10px; }
+
+        /* 響應式 */
+        @media (max-width: 400px) {
+            #canvas { width: 300px; height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="wheel-section">
+        <h1>🎡 幸運轉輪挑戰賽</h1>
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <canvas id="canvas" width="380" height="380"></canvas>
+        </div>
+        <button id="spinBtn" class="btn" onclick="spin()">點擊開始旋轉</button>
+    </div>
+
+    <div id="quiz-section">
+        <h2 id="q-category" style="color: var(--primary); font-size: 16px;"></h2>
+        <h3 id="q-title">題目載入中...</h3>
+        <div id="options-container"></div>
+        <div id="feedback" class="result-msg"></div>
+        <button id="backBtn" class="btn" onclick="showWheel()">回到轉盤</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const wheelSec = document.getElementById('wheel-section');
+        const quizSec = document.getElementById('quiz-section');
+        const spinBtn = document.getElementById('spinBtn');
+
+        // 題庫設定 (正確答案均為 A，即 Index 0)
+        const quizData = [
+            { cat: "雲端發票-載具收割戰", q: "紙本發票怪獸也想加入騎士團！我要怎麼做？", options: ["申請手機條碼，並歸戶", "繼續索取紙本發票"], correct: 0 },
+            { cat: "納保-小吉的權益守護者", q: "稅務案件遇到困難，誰能提供協助？", options: ["納稅者權利保護官", "鄰居阿姨"], correct: 0 },
+            { cat: "同性平等-職業變變變", q: "職業有分性別或性向嗎？", options: ["沒有，每個人都有無限可能", "有，女生只能當護士"], correct: 0 },
+            { cat: "反詐騙-小吉的詐騙終結者", q: "收到疑似詐騙簡訊或連結，該怎麼辦？", options: ["撥打165專線求證", "點開來看看是甚麼"], correct: 0 },
+            { cat: "CFC-小吉的海外營收迷宮", q: "海外盈餘只要不匯回，就不用在台灣報稅？", options: ["不是，適用CFC制度需申報", "是的，不匯回就不稅"], correct: 0 },
+            { cat: "稅務新知-小吉的智慧探索家", q: "想知道最新稅務優惠與法規更新嗎？", options: ["掃QR Code看新知", "不理它"], correct: 0 }
+        ];
+
+        // 注意：為了邏輯一致性，我稍微微調了題目3、4、5的選項順序，確保(A)是正確答案。
+
+        const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF9F43', '#A29BFE', '#54A0FF'];
+        let rotation = 0;
+
+        // 畫轉盤
+        function drawWheel() {
+            const size = canvas.width, center = size / 2, slice = (Math.PI * 2) / 6;
+            for (let i = 0; i < 6; i++) {
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, center, i * slice, (i + 1) * slice);
+                ctx.fill();
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(i * slice + slice / 2);
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 20px sans-serif";
+                ctx.textAlign = "right";
+                ctx.fillText("第 " + (i + 1) + " 題", center - 20, 10);
+                ctx.restore();
+            }
+        }
+
+        // 開始轉動
+        function spin() {
+            spinBtn.disabled = true;
+            const extraDeg = Math.floor(Math.random() * 360) + 1800; // 轉5圈以上
+            rotation += extraDeg;
+            canvas.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)';
+            canvas.style.transform = `rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                const actualDeg = rotation % 360;
+                // 計算指標(上方270度)落在第幾區
+                const index = Math.floor(((360 - actualDeg + 270) % 360) / 60);
+                showQuiz(index);
+            }, 4000);
+        }
+
+        // 顯示題目頁面
+        function showQuiz(idx) {
+            wheelSec.style.display = 'none';
+            quizSec.style.display = 'block';
+            
+            const data = quizData[idx];
+            document.getElementById('q-category').innerText = `【 ${data.cat} 】`;
+            document.getElementById('q-title').innerText = data.q;
+            
+            const container = document.getElementById('options-container');
+            const feedback = document.getElementById('feedback');
+            const backBtn = document.getElementById('backBtn');
+            container.innerHTML = "";
+            feedback.innerText = "";
+            backBtn.style.display = 'none';
+
+            data.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `(${String.fromCharCode(65 + i)}) ${opt}`;
+                btn.onclick = () => {
+                    const allBtns = container.querySelectorAll('button');
+                    allBtns.forEach(b => b.disabled = true); // 答題後禁用
+                    
+                    if (i === data.correct) {
+                        feedback.innerText = "✅ 恭喜答對了！";
+                        feedback.style.color = "var(--success)";
+                        btn.style.background = "#d1fae5";
+                        btn.style.borderColor = "var(--success)";
+                    } else {
+                        feedback.innerText = "❌ 答錯囉，正確答案是 (A)";
+                        feedback.style.color = "var(--error)";
+                        btn.style.background = "#fee2e2";
+                        btn.style.borderColor = "var(--error)";
+                    }
+                    backBtn.style.display = 'inline-block';
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // 返回轉盤
+        function showWheel() {
+            quizSec.style.display = 'none';
+            wheelSec.style.display = 'flex';
+            spinBtn.disabled = false;
+        }
+// ... (前面 CSS 與 HTML 部分保持不變)
+
+        function showQuiz(idx) {
+            wheelSec.style.display = 'none';
+            quizSec.style.display = 'block';
+            
+            const data = quizData[idx];
+            document.getElementById('q-category').innerText = `【 ${data.cat} 】`;
+            document.getElementById('q-title').innerText = data.q;
+            
+            const container = document.getElementById('options-container');
+            const feedback = document.getElementById('feedback');
+            const backBtn = document.getElementById('backBtn');
+            container.innerHTML = "";
+            feedback.innerText = "";
+            backBtn.style.display = 'none';
+
+            data.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `(${String.fromCharCode(65 + i)}) ${opt}`;
+                btn.onclick = () => {
+                    const allBtns = container.querySelectorAll('button');
+                    allBtns.forEach(b => b.disabled = true); 
+                    
+                    if (i === data.correct) {
+                        feedback.innerText = "✅ 恭喜答對了！";
+                        feedback.style.color = "var(--success)";
+                        btn.style.background = "#d1fae5";
+                        btn.style.borderColor = "var(--success)";
+
+                        // --- 特殊邏輯：第六題答對跳轉 ---
+                        if (idx === 5) { // 索引 5 代表第六題
+                            feedback.innerText = "✅ 答對了！即將前往 YouTube 頻道...";
+                            setTimeout(() => {
+                                window.location.href = "https://www.youtube.com/@yourntact";
+                            }, 1500); // 延遲 1.5 秒讓使用者看到正確訊息後再跳轉
+                        }
+                        // ------------------------------
+                        
+                    } else {
+                        feedback.innerText = "❌ 答錯囉，正確答案是 (A)";
+                        feedback.style.color = "var(--error)";
+                        btn.style.background = "#fee2e2";
+                        btn.style.borderColor = "var(--error)";
+                    }
+                    
+                    // 如果不是第六題，才顯示返回按鈕（第六題會直接跳轉）
+                    if (idx !== 5) {
+                        backBtn.style.display = 'inline-block';
+                    }
+                };
+                container.appendChild(btn);
+            });
+        }
+
+// ... (後面 drawWheel 等函數保持不變)
+        drawWheel();
+    </script>
+</body>
+</html>
