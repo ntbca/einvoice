@@ -97,7 +97,9 @@
         }
 
         function showQuiz(idx) {
-            wheelSec.style.display = 'none'; quizSec.style.display = 'block';
+            wheelSec.style.display = 'none'; 
+            quizSec.style.display = 'block';
+            
             const data = quizData[idx];
             document.getElementById('q-category').innerText = `【 ${data.cat} 】`;
             document.getElementById('q-title').innerText = data.q;
@@ -109,7 +111,10 @@
             const container = document.getElementById('options-container');
             const feedback = document.getElementById('feedback');
             const backBtn = document.getElementById('backBtn');
-            container.innerHTML = ""; feedback.innerText = ""; backBtn.style.display = 'none';
+            
+            container.innerHTML = ""; 
+            feedback.innerText = ""; 
+            backBtn.style.display = 'none';
 
             data.options.forEach((opt, i) => {
                 const btn = document.createElement('button');
@@ -118,15 +123,27 @@
                 btn.onclick = () => {
                     const allBtns = container.querySelectorAll('button');
                     allBtns.forEach(b => b.disabled = true);
+                    
                     if (i === data.correct) {
-                        feedback.innerText = (idx === 5) ? "✅ 答對了！即將前往 YouTube..." : "✅ 恭喜答對了！";
-                        feedback.style.color = "var(--success)";
-                        if (idx === 5) setTimeout(() => window.location.href = "https://www.youtube.com/@yourntact", 1500);
+                        // --- 答對邏輯 ---
+                        if (idx === 5) { // 如果是第六題
+                            feedback.innerText = "✅ 答對了！即將前往 YouTube...";
+                            feedback.style.color = "var(--success)";
+                            setTimeout(() => {
+                                window.location.href = "https://www.youtube.com/@yourntact";
+                            }, 1500);
+                        } else {
+                            feedback.innerText = "✅ 恭喜答對了！";
+                            feedback.style.color = "var(--success)";
+                            backBtn.style.display = 'inline-block'; // 顯示回到轉盤按鈕
+                        }
                     } else {
+                        // --- 答錯邏輯 ---
                         feedback.innerText = "❌ 答錯囉，正確答案是 (A)";
                         feedback.style.color = "var(--error)";
+                        // 無論哪一題（包含第六題），只要答錯就顯示回到轉盤按鈕
+                        backBtn.style.display = 'inline-block'; 
                     }
-                    if (idx !== 5) backBtn.style.display = 'inline-block';
                 };
                 container.appendChild(btn);
             });
