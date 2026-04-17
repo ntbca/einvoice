@@ -79,38 +79,51 @@
     let availableIndices = [0, 1, 2, 3, 4, 5];
         
         function drawWheel() {
-            const size = canvas.width, center = size / 2, slice = (Math.PI * 2) / 6;
-            for (let i = 0; i < 6; i++) {
-                ctx.beginPath(); ctx.fillStyle = colors[i]; ctx.moveTo(center, center);
-                ctx.arc(center, center, center, i * slice, (i + 1) * slice); ctx.fill();
-                ctx.save(); ctx.translate(center, center); ctx.rotate(i * slice + slice / 2);
-                ctx.fillStyle = "#fff"; ctx.font = "bold 20px sans-serif"; ctx.textAlign = "right";
-                ctx.fillText("第 " + (i + 1) + " 題", center - 20, 10); ctx.restore();
-            }
+        const size = canvas.width, center = size / 2, slice = (Math.PI * 2) / 6;
+        ctx.clearRect(0, 0, size, size);
+        
+        // 起始角度設為 -90 度 (即正上方)
+        const startOffset = -Math.PI / 2;
+
+        for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.fillStyle = colors[i];
+            ctx.moveTo(center, center);
+            // 繪製扇形
+            ctx.arc(center, center, center, startOffset + i * slice, startOffset + (i + 1) * slice);
+            ctx.fill();
+
+            // 繪製文字
+            ctx.save();
+            ctx.translate(center, center);
+            // 文字旋轉角度也要跟著偏移
+            ctx.rotate(startOffset + i * slice + slice / 2);
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 20px sans-serif";
+            ctx.textAlign = "right";
+            ctx.fillText("第 " + (i + 1) + " 題", center - 20, 10);
+            ctx.restore();
         }
+    }
 
        function spin() {
         if (availableIndices.length === 0) {
-            // 自動重置
             availableIndices = [0, 1, 2, 3, 4, 5];
         }
 
         spinBtn.disabled = true;
         
-        // 1. 隨機選一個還沒出的題號
         const randomIndex = Math.floor(Math.random() * availableIndices.length);
         const targetIdx = availableIndices[randomIndex];
 
-        /* 2. 核心修正：計算角度
-           - 每一格 60 度
-           - 指標在正上方 (270度方向)
-           - 為了停在格子正中央，我們需要計算：(360 - 索引*60) - 30 
-        */
+        // 每一格 60 度
         const segmentAngle = 60;
-        const targetCenterAngle = (360 - (targetIdx * segmentAngle)) - (segmentAngle / 2);
         
-        // 加上轉圈數 (1800度 = 5圈)，並確保 rotation 累加避免反轉
-        const extraSpins = 1800; 
+        // 因為第 1 題就在 0 度位置(正上方)，我們只需要逆向旋轉 targetIdx * 60 度
+        // 再減去 30 度讓指針落在色塊中央
+        const targetCenterAngle = (360 - (targetIdx * segmentAngle)) - 30;
+        
+        const extraSpins = 1800; // 轉 5 圈
         const currentRotationBase = Math.ceil(rotation / 360) * 360;
         rotation = currentRotationBase + extraSpins + targetCenterAngle;
 
@@ -118,12 +131,11 @@
         canvas.style.transform = `rotate(${rotation}deg)`;
 
         setTimeout(() => {
-            // 從背景清單中移除這一題
             availableIndices = availableIndices.filter(item => item !== targetIdx);
             showQuiz(targetIdx);
         }, 4000);
     }
-
+        
     function showQuiz(idx) {
         wheelSec.style.display = 'none'; quizSec.style.display = 'block';
         const data = quizData[idx];
