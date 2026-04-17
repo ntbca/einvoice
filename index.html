@@ -56,9 +56,10 @@
     </div>
 
     <script>
-        const subLabels = ["雲端發票", "納保官", "性別平等", "反詐騙", "CFC", "稅務新知"];
+
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const subLabels = ["雲端發票", "納保官", "性別平等", "反詐騙", "CFC", "稅務新知"];
         const wheelSec = document.getElementById('wheel-section');
         const quizSec = document.getElementById('quiz-section');
         const spinBtn = document.getElementById('spinBtn');
@@ -111,6 +112,7 @@
             ctx.restore();
         }
     }
+        
        function spin() {
         if (availableIndices.length === 0) {
             availableIndices = [0, 1, 2, 3, 4, 5];
