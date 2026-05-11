@@ -118,12 +118,19 @@
             ctx.font = "bold 17px sans-serif";
             ctx.fillText("第 " + (i + 1) + " 題", center - 25, -8); 
 
-            // --- 第二行：副標題 ---
-            ctx.font = "16px sans-serif"; // 副標題稍微小一點
-            ctx.fillText(subLabels[i], center - 25, 15); 
-            
-            ctx.restore();
-        }
+        // --- 第二行：副標題 (支援換行) ---
+const label = subLabels[i];
+if (label.includes("-")) { 
+    // 如果文字裡面有 "-" 符號，就拆成兩行
+    const parts = label.split("-");
+    ctx.font = "14px sans-serif"; // 字體稍微調小一點點才塞得下兩行
+    ctx.fillText(parts[0], center - 25, 10); // 第一段稍微往上
+    ctx.fillText(parts[1], center - 25, 25); // 第二段稍微往下
+} else {
+    // 沒有 "-" 的話，維持原樣
+    ctx.font = "16px sans-serif";
+    ctx.fillText(label, center - 25, 15);
+}
     }
         
        function spin() {
