@@ -46,6 +46,18 @@
         🌐 English Version
     </button>
 </div>
+    <script>
+function switchLanguage() {
+    // 檢查目前是否正在看題目
+    const quizSec = document.getElementById('quiz-section');
+    let url = 'https://ntbca.github.io/einvoice-en/';
+    
+    if (quizSec.style.display === 'block' && typeof window.currentIdx !== 'undefined') {
+        url += '?q=' + window.currentIdx;
+    }
+    location.href = url;
+}
+</script>
     <div id="wheel-section">
         <h1>🎡 稅務超攻略！<br>旋轉幸運之輪</h1>
         <div class="wheel-container">
@@ -157,6 +169,9 @@
     }
         
     function showQuiz(idx) {
+        window.currentIdx = idx; 
+    // 讓網址列即時顯示題號，按鈕才抓得到
+    window.history.replaceState(null, '', '?q=' + idx);
         wheelSec.style.display = 'none'; quizSec.style.display = 'block';
         const data = quizData[idx];
         document.getElementById('q-category').innerText = `【 ${data.cat} 】`;
@@ -210,7 +225,20 @@
         // 如果背景題目全部抽完，下一秒再點「開始旋轉」就會自動跑新的一輪，不需更動按鈕文字
     }
     
+    // 替換掉原本單純的 drawWheel();
+const urlParams = new URLSearchParams(window.location.search);
+const qIndex = urlParams.get('q');
+if (qIndex !== null) {
+    const idx = parseInt(qIndex);
+    if (idx >= 0 && idx < quizData.length) {
+        drawWheel(); 
+        showQuiz(idx); 
+    } else {
+        drawWheel();
+    }
+} else {
     drawWheel();
+}
 
     </script>
 </body>
