@@ -233,20 +233,21 @@ function switchLanguage() {
         // 如果背景題目全部抽完，下一秒再點「開始旋轉」就會自動跑新的一輪，不需更動按鈕文字
     }
     
-    // 替換掉原本單純的 drawWheel();
-const urlParams = new URLSearchParams(window.location.search);
-const qIndex = urlParams.get('q');
-if (qIndex !== null) {
-    const idx = parseInt(qIndex);
-    if (idx >= 0 && idx < quizData.length) {
-        drawWheel(); 
-        showQuiz(idx); 
-    } else {
-        drawWheel();
+  // --- 英文版 index.html 最下方 ---
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const qIndex = urlParams.get('q');
+    
+    if (qIndex !== null) {
+        const idx = parseInt(qIndex);
+        if (idx >= 0 && idx < quizData.length) {
+            drawWheel();   // 畫背景
+            showQuiz(idx); // 直接顯示該題號的英文題目
+            return;        // 結束，不要再往下執行
+        }
     }
-} else {
-    drawWheel();
-}
+    drawWheel(); // 如果沒參數，正常畫轉盤
+});
 
     </script>
 </body>
